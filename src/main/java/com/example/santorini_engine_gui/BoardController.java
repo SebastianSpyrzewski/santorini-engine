@@ -31,6 +31,7 @@ public class BoardController implements Drawer {
     }
 
     private Field chosenField;
+    private boolean toBuild = false;
 
     public void setBoard(Board board) {
         this.board = board;
@@ -43,7 +44,7 @@ public class BoardController implements Drawer {
             int i = (int)(e.getX()-2)/100;
             int j = (int)(e.getY()-2)/100;
             Field field = board.map[i][j];
-            if(field.worker!=null){
+            if(field.worker != null && field.worker.equals(board.players[board.playerToMove]) && !toBuild){
                 if(chosenField!=null) {
                     gc.setFill(Color.LIGHTGRAY);
                     gc.fillRect(chosenField.x * 100 + 2, chosenField.y * 100 + 2, 100, 100);
@@ -53,23 +54,34 @@ public class BoardController implements Drawer {
                 gc.setFill(Color.BLACK);
                 gc.fillRect(chosenField.x*100+2, chosenField.y*100+2, 100, 100);
                 drawField(chosenField.x, chosenField.y);
-            } else {
-                if(chosenField!=null) {
-                    Player player = chosenField.worker;
-                    player.moveWorker(chosenField, field);
-                    drawField(field.x, field.y);
-                    gc.setFill(Color.LIGHTGRAY);
-                    gc.fillRect(chosenField.x * 100 + 2, chosenField.y * 100 + 2, 100, 100);
-                    drawField(chosenField.x, chosenField.y);
-                    chosenField = null;
-                    if(field.height==3){
-                        welcomeText.setText("Player "+player.name+" won");
+            } else if (field.worker == null){
+                if(chosenField!=null && !toBuild) {
+                    if(chosenField.x < field.x-1 || chosenField.x>field.x+1 || chosenField.y < field.y-1 || chosenField.y>field.y+1){
+                        welcomeText.setText("You cannot move to this field");
+                    } else {
+                        Player player = chosenField.worker;
+                        player.moveWorker(chosenField, field);
+                        drawField(field.x, field.y);
+                        gc.setFill(Color.LIGHTGRAY);
+                        gc.fillRect(chosenField.x * 100 + 2, chosenField.y * 100 + 2, 100, 100);
+                        drawField(chosenField.x, chosenField.y);
+                        chosenField = field;
+                        if (field.height == 3) {
+                            welcomeText.setText("Player " + player.name + " won");
+                        }
+                        toBuild = true;
                     }
-                } else {
-                    field.height+=1;
-                    drawField(field.x, field.y);
-                    board.nextPlayer();
-                    board.play();
+                } else if (toBuild){
+                    if(chosenField.x < field.x-1 || chosenField.x>field.x+1 || chosenField.y < field.y-1 || chosenField.y>field.y+1){
+                        welcomeText.setText("You cannot build at this field");
+                    } else {
+                        field.height += 1;
+                        drawField(field.x, field.y);
+                        toBuild = false;
+                        board.nextPlayer();
+                        board.play();
+                        chosenField=null;
+                    }
                 }
             }
         });
